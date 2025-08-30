@@ -28,37 +28,28 @@ export default function PropertyForm({ connectedAccount, mode, onPropertyRegiste
     }
   };
 
-  const validateField = (name, value) => {
-    const errors = { ...validationErrors };
+  const validateForm = () => {
+    const errors = {};
     
-    switch (name) {
-      case 'address':
-        if (!value.trim()) {
-          errors.address = 'Property address is required';
-        } else if (value.length < 10) {
-          errors.address = 'Please enter a complete address';
-        } else {
-          delete errors.address;
-        }
-        break;
-      case 'totalFloors':
-        if (!value || value < 1) {
-          errors.totalFloors = 'Must be at least 1 floor';
-        } else if (value > 200) {
-          errors.totalFloors = 'Maximum 200 floors allowed';
-        } else {
-          delete errors.totalFloors;
-        }
-        break;
-      case 'currentFloors':
-        if (!value || value < 1) {
-          errors.currentFloors = 'Must be at least 1 floor';
-        } else if (parseInt(value) > parseInt(formData.totalFloors)) {
-          errors.currentFloors = 'Cannot exceed total floors';
-        } else {
-          delete errors.currentFloors;
-        }
-        break;
+    // Validate address
+    if (!formData.address.trim()) {
+      errors.address = 'Property address is required';
+    } else if (formData.address.length < 10) {
+      errors.address = 'Please enter a complete address';
+    }
+    
+    // Validate total floors
+    if (!formData.totalFloors || formData.totalFloors < 1) {
+      errors.totalFloors = 'Must be at least 1 floor';
+    } else if (formData.totalFloors > 200) {
+      errors.totalFloors = 'Maximum 200 floors allowed';
+    }
+    
+    // Validate current floors
+    if (!formData.currentFloors || formData.currentFloors < 1) {
+      errors.currentFloors = 'Must be at least 1 floor';
+    } else if (parseInt(formData.currentFloors) > parseInt(formData.totalFloors)) {
+      errors.currentFloors = 'Cannot exceed total floors';
     }
     
     setValidationErrors(errors);
@@ -90,7 +81,7 @@ export default function PropertyForm({ connectedAccount, mode, onPropertyRegiste
       const airRights = parseInt(formData.totalFloors) - parseInt(formData.currentFloors);
       
       setSuccess(
-        `🎉 Property registered on blockchain! 
+        `Property registered on blockchain! 
          Transaction: ${receipt.transactionHash}
          Available air rights: ${airRights} floors`
       );

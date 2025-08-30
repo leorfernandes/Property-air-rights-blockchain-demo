@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { contractService } from '../utils/contract';
 import { Lock, FileText, Search, X, Building, Construction, MapPin, User, Settings, Ban, AlertTriangle, RotateCcw, CheckCircle, TrendingUp, TrendingDown, AlphabeticalIcon, Sparkles } from 'lucide-react';
+import PropertyDetails from './PropertyDetails';
+import TransferProperty from './TransferProperty';
+import ManageProperty from './ManageProperty';
 
 export default function PropertyList({ connectedAccount, mode, refreshTrigger, onStatsUpdate }) {
   const [properties, setProperties] = useState([]);
@@ -9,40 +12,8 @@ export default function PropertyList({ connectedAccount, mode, refreshTrigger, o
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('newest');
   const [filterBy, setFilterBy] = useState('all');
-
-  // Mock data for now - we'll replace with real blockchain data
-  const mockProperties = [
-    {
-      id: 1,
-      address: "123 Main Street, Manhattan, NY",
-      totalFloors: 15,
-      currentFloors: 8,
-      availableAirRights: 7,
-      owner: "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
-      ownerName: "Alice (Property Owner)",
-      registrationDate: "2024-01-15"
-    },
-    {
-      id: 2,
-      address: "456 Broadway Avenue, Manhattan, NY",
-      totalFloors: 20,
-      currentFloors: 12,
-      availableAirRights: 8,
-      owner: "0x70997970C51812dc3A010C7d01b50e0d17dc79C8",
-      ownerName: "Bob (Buyer)",
-      registrationDate: "2024-01-10"
-    },
-    {
-      id: 3,
-      address: "789 Fifth Avenue, Manhattan, NY",
-      totalFloors: 10,
-      currentFloors: 10,
-      availableAirRights: 0,
-      owner: "0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC",
-      ownerName: "Carol (Developer)",
-      registrationDate: "2024-01-05"
-    }
-  ];
+  const [activeModal, setActiveModal] = useState(null);
+  const [selectedProperty, setSelectedProperty] = useState(null);
 
   useEffect(() => {
     if (connectedAccount) {
@@ -60,12 +31,12 @@ export default function PropertyList({ connectedAccount, mode, refreshTrigger, o
       
       console.log('Fetching properties from blockchain...');
       
-      // Get real blockchain data!
+      // Get real blockchain data
       const blockchainProperties = await contractService.getAllProperties();
       
       console.log('Properties from blockchain:', blockchainProperties);
       
-      // Format for display (add friendly names for demo accounts)
+      // Format for display
       const formattedProperties = blockchainProperties.map(property => ({
         ...property,
         ownerName: getOwnerName(property.owner),
@@ -74,7 +45,6 @@ export default function PropertyList({ connectedAccount, mode, refreshTrigger, o
       
       setProperties(formattedProperties);
 
-      // Add this line to update parent stats:
       if (onStatsUpdate) {
         onStatsUpdate(formattedProperties);
       }
@@ -147,18 +117,6 @@ export default function PropertyList({ connectedAccount, mode, refreshTrigger, o
   const formatAddress = (address) => {
     if (!address) return '';
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
-  };
-
-  const getAirRightsColor = (airRights) => {
-    if (airRights === 0) return 'text-red-600 bg-red-50';
-    if (airRights <= 3) return 'text-yellow-600 bg-yellow-50';
-    return 'text-green-600 bg-green-50';
-  };
-
-  const getAirRightsIcon = (airRights) => {
-    if (airRights === 0) return '🔴';
-    if (airRights <= 3) return '🟡';
-    return '🟢';
   };
 
   if (!connectedAccount) {
@@ -500,12 +458,24 @@ export default function PropertyList({ connectedAccount, mode, refreshTrigger, o
 
                 {/* Enhanced Action Buttons */}
                 <div className="grid grid-cols-3 gap-3 mt-6 pt-4 border-t border-gray-200">
-                  <button className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm font-semibold">
+                  <button 
+                    onClick={() => {
+                      setSelectedProperty(property);
+                      setActiveModal('details');
+                    }}
+                    className="bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm font-semibold"
+                  >
                     <FileText size={16} className="mr-1" />
                     Details
                   </button>
                   {property.availableAirRights > 0 ? (
-                    <button className="bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm font-semibold">
+                    <button 
+                      onClick={() => {
+                        setSelectedProperty(property);
+                        setActiveModal('transfer');
+                      }}
+                      className="bg-gradient-to-r from-violet-500 to-violet-600 hover:from-violet-600 hover:to-violet-700 text-white py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm font-semibold"
+                    >
                       <Construction size={16} className="mr-1" />
                       Transfer
                     </button>
@@ -516,7 +486,13 @@ export default function PropertyList({ connectedAccount, mode, refreshTrigger, o
                     </button>
                   )}
                   {property.owner.toLowerCase() === connectedAccount.toLowerCase() ? (
-                    <button className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm font-semibold">
+                    <button 
+                      onClick={() => {
+                        setSelectedProperty(property);
+                        setActiveModal('manage');
+                      }}
+                      className="bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 text-white py-3 px-4 rounded-lg transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5 text-sm font-semibold"
+                    >
                       <Settings size={16} className="mr-1" />
                       Manage
                     </button>
@@ -558,6 +534,43 @@ export default function PropertyList({ connectedAccount, mode, refreshTrigger, o
           </div>
         </div>
       )}
+
+    {/* Modals */}
+    {activeModal === 'details' && (
+      <PropertyDetails 
+        property={selectedProperty} 
+        onClose={() => {
+          setActiveModal(null);
+          setSelectedProperty(null);
+        }} 
+      />
+    )}
+
+    {activeModal === 'transfer' && (
+      <TransferProperty 
+        property={selectedProperty} 
+        onClose={() => {
+          setActiveModal(null);
+          setSelectedProperty(null);
+        }}
+        onTransferComplete={() => {
+          fetchProperties(); // Refresh the list
+        }}
+      />
+    )}
+
+    {activeModal === 'manage' && (
+      <ManageProperty 
+        property={selectedProperty} 
+        onClose={() => {
+          setActiveModal(null);
+          setSelectedProperty(null);
+        }}
+        onUpdateComplete={() => {
+          fetchProperties(); // Refresh the list
+        }}
+      />
+    )}
     </div>
   );
 }

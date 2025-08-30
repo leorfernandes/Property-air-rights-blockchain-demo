@@ -1,13 +1,14 @@
 import { ethers } from 'ethers';
 
-// Your contract ABI (we'll get this from the compiled contract)
+// Your contract ABI
 const CONTRACT_ABI = [
     "function registerProperty(string memory _propertyAddress, uint256 _totalFloors, uint256 _currentFloors) external",
-    "function getPropertyInfo(uint256 _propertyId) external view returns (address owner, string memory propertyAddress, uint256 totalFloors, uint256 currentFloors, uint256 availableAirRights, uint256 registrationDate)", // Fixed order
-    "function getPropertyByAddress(string memory _propertyAddress) external view returns (uint256 propertyId, address owner, uint256 totalFloors, uint256 currentFloors, uint256 availableAirRights)", // Fixed order
+    "function getPropertyInfo(uint256 _propertyId) external view returns (address owner, string memory propertyAddress, uint256 totalFloors, uint256 currentFloors, uint256 availableAirRights, uint256 registrationDate)",
+    "function getPropertyByAddress(string memory _propertyAddress) external view returns (uint256 propertyId, address owner, uint256 totalFloors, uint256 currentFloors, uint256 availableAirRights)",
     "function transferOwnership(uint256 _propertyId, address _newOwner, string memory _reason) external",
     "function getPropertyCount() external view returns (uint256)",
-    "function getAllProperties() public view returns (uint256[] memory)", // Added this one!
+    "function getAllProperties() public view returns (uint256[] memory)",
+    "function updateAirRights(uint256 _propertyId, uint256 _newCurrentFloors)",
     "event PropertyRegistered(uint256 indexed propertyId, address indexed owner, string propertyAddress)",
     "event OwnershipTransferred(uint256 indexed propertyId, address indexed oldOwner, address indexed newOwner, string reason)"
 ];
@@ -29,8 +30,7 @@ class ContractService {
                 // Use Hardhat's local provider for demo accounts
                 this.provider = new ethers.JsonRpcProvider('http://localhost:8545');
 
-                // For demo mode, we need to use the private key to create a signer
-                // These are Hardhat's default test account private keys
+                // Hardhat's default test account private keys
                 const demoPrivateKeys = [
                     "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80", // Alice
                     "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d", // Bob
@@ -129,7 +129,7 @@ class ContractService {
 
         return {
             id: propertyId,
-            owner: result[0],              // owner is first now
+            owner: result[0],              // owner is first
             address: result[1],            // address is second
             totalFloors: parseInt(result[2].toString()),
             currentFloors: parseInt(result[3].toString()),
@@ -152,7 +152,7 @@ class ContractService {
   try {
     console.log('Getting property IDs from blockchain...');
     
-    // This returns an array of property IDs (not property data)
+    // Returns an array of property IDs (not property data)
     const propertyIds = await this.contract.getAllProperties();
     console.log('Property IDs from blockchain:', propertyIds);
     
@@ -163,7 +163,7 @@ class ContractService {
     
     const properties = [];
     
-    // Now get detailed info for each property ID
+    // Get detailed info for each property ID
     for (let i = 0; i < propertyIds.length; i++) {
       try {
         const propertyId = parseInt(propertyIds[i].toString());
@@ -227,6 +227,27 @@ class ContractService {
             throw error;
         }
     }
+
+    // Update Air Rights
+    async updateAirRights(propertyId, newCurrentFloors) {
+        if (!this.contract) {
+            throw new Error('Contract not initialized');
+        }
+
+        try {
+            const tx = await this.contract.updateAirRights(
+            propertyId,
+            parseInt(newCurrentFloors)
+            );
+
+            const receipt = await tx.wait();
+            return receipt;
+
+        } catch (error) {
+            console.error('Error updating air rights:', error);
+            throw error;
+        }
+        }
 }
 
 // Export singleton instance

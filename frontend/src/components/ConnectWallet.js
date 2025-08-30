@@ -209,7 +209,7 @@ export default function ConnectWallet({ onWalletConnected }) {
 
                 {error && !error.includes('Demo Mode') && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-4 text-sm">
-                    ⚠️ {error}
+                    {error}
                     {error.includes('MetaMask not detected') && (
                       <div className="mt-2">
                         <a 
